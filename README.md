@@ -1,4 +1,4 @@
-# INST477-Final-Project
+# INST447-Final-Project
 ---
 
 To run locally follow these instructions:
