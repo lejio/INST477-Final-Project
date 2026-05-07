@@ -1,5 +1,6 @@
 import requests
 from dotenv import load_dotenv
+import yfinance as yf
 import os
 
 load_dotenv()
@@ -19,11 +20,16 @@ def get_news_company(ticker):
 
     if r.status_code == 200:
         print(r.json())
+
+def get_volume_data(ticker):
+    data = yf.download(ticker, start="2026-05-01", end="2026-05-01")
+    print(data['Volume'])
     
     
     
 if __name__ == "__main__":
     # get_ape_wisdom_data()
-    get_news_company("AAPL")
+    # get_news_company("AAPL")
+    get_volume_data("AAPL")
 
 
