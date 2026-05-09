@@ -33,6 +33,8 @@ Install required packages in requirements.txt
 pip install -r requirements.txt
 ```
 
+Create a ```.env``` file and paste the secrets in there.
+
 Finally, run main.py
 ```sh
 python main.py
