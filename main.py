@@ -3,9 +3,12 @@ from dotenv import load_dotenv
 import yfinance as yf
 import os
 from transformers import pipeline
+from datetime import datetime
+import pandas as pd
 
 load_dotenv()
 
+# Extraction 
 
 def get_ape_wisdom_data():
     r = requests.get("https://apewisdom.io/api/v1.0/filter/stocks")
@@ -67,26 +70,161 @@ def get_volume_data(ticker, start_date, end_date):
     hist = ticker.history(start=start_date, end=end_date)
     return hist["Volume"]
 
+# Transformation
+
+
+def transform_news_data(news_data):
+
+    transformed = []
+
+    for article in news_data:
+
+        headline = article.get("headline", "")
+        summary = article.get("summary", "")
+
+        # combine text
+        text = f"{headline}. {summary}"
+
+        # cleaning
+        text = text.replace("\xa0", " ")
+        text = text.replace("&#39;", "'")
+        text = " ".join(text.split())
+        text = text.encode("utf-8", "ignore").decode("utf-8")
+
+        # convert timestamp
+        date = datetime.fromtimestamp(
+            article["datetime"]
+        ).strftime("%Y-%m-%d")
+
+        transformed.append({
+            "ticker": article.get("related"),
+            "headline": headline,
+            "summary": summary,
+            "text": text,
+            "source": article.get("source"),
+            "date": date
+        })
+
+    return transformed
+
+
+   # main pipeline
+
 
 if __name__ == "__main__":
 
+    
+    #  Load model
+   
     finbert = pipeline(
-        "text-classification", model="ProsusAI/finbert", tokenizer="ProsusAI/finbert"
+        "text-classification",
+        model="ProsusAI/finbert",
+        tokenizer="ProsusAI/finbert"
     )
 
+    
+     # Parameters
+   
     start_date = "2026-05-01"
     end_date = "2026-05-02"
-    # get_ape_wisdom_data()
-    print(get_news_company("AAPL", start_date, end_date))
-    print(get_volume_data("AAPL", start_date, end_date))
+
+
+    # EXTRACT
+  
+    news = get_news_company("AAPL", start_date, end_date)
+
     
-    # TO DO:
-    # 1. Transform the news data into a format that can be fed into the FinBERT model (e.g., extract headlines and summaries).
+    #  TRANSFORM
+    
+    transformed_news = transform_news_data(news)
 
-    texts = [
-        "Apple beats earnings estimates and raises guidance.",
-        "Tesla faces lawsuit over autopilot safety concerns.",
-    ]
+    texts = [article["text"] for article in transformed_news]
 
+    
+    # SENTIMENT ANALYSIS
+    
     results = finbert(texts)
-    print(results)
+
+ 
+    # BUILD FINAL DATASET
+    
+    final_dataset = []
+
+    for article, sentiment in zip(transformed_news, results):
+
+        article["sentiment"] = sentiment["label"]
+        article["confidence"] = sentiment["score"]
+
+        final_dataset.append(article)
+
+    
+    # OUTPUT
+ 
+    df = pd.DataFrame(final_dataset)
+
+    for row in final_dataset:
+        print("\n-------------------")
+        print(f"Headline: {row['headline']}")
+        print(f"Sentiment: {row['sentiment']}")
+        print(f"Confidence: {row['confidence']:.2f}")
+        print(f"Date: {row['date']}")
+
+       
+#  EDA statistics 
+
+
+df = pd.DataFrame(final_dataset)
+
+print("\n=========================")
+print("DESCRIPTIVE EDA")
+print("=========================")
+
+# 1. Basic info
+print("\nDataset shape:", df.shape)
+print("\nMissing values:\n", df.isnull().sum())
+
+# 2. Sentiment distribution
+print("\nSentiment distribution:\n", df["sentiment"].value_counts())
+
+# 3. Source distribution (bias indicator)
+print("\nSource distribution:\n", df["source"].value_counts())
+
+# 4. Confidence summary
+print("\nConfidence stats:\n", df["confidence"].describe())
+
+# 5. Sentiment over time
+print("\nSentiment by date:\n")
+print(df.groupby("date")["sentiment"].value_counts())
+
+# 6. Average confidence per sentiment
+print("\nAvg confidence by sentiment:\n")
+print(df.groupby("sentiment")["confidence"].mean())
+
+
+#EDA VISUALIZATION
+
+
+# BIAS EXPLORATION
+
+print("\n=========================")
+print("BIAS ANALYSIS")
+print("=========================")
+
+# Bias check 1: source imbalance
+source_counts = df["source"].value_counts()
+print("\nSource imbalance:\n", source_counts)
+
+# Bias check 2: sentiment skew
+sentiment_counts = df["sentiment"].value_counts(normalize=True)
+print("\nSentiment proportions:\n", sentiment_counts)
+
+# Bias check 3: missing data patterns
+print("\nMissing data pattern:\n", df.isna().mean())
+
+# Bias check 4: sentiment by source
+print("\nSentiment by source:\n")
+print(df.groupby("source")["sentiment"].value_counts())
+
+# Bias check 5: potential overconfidence
+high_confidence = df[df["confidence"] > 0.90]
+print("\nHigh confidence articles (>0.90):", len(high_confidence))
