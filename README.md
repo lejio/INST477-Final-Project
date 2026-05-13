@@ -18,7 +18,7 @@ git clone git@github.com:lejio/INST447-Final-Project.git
 cd ./INST447-Final-Project
 ```
 
-Make a environment
+Make an environment
 ```sh
 python3 -m venv .venv
 ```
