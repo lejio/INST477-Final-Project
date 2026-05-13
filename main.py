@@ -263,7 +263,7 @@ print("mean ", df["date"].mean())
 print("\nDate distribution:")
 print(df["date"].value_counts())
 
-#EDA VISUALIZATION
+# EDA VISUALIZATION
 
 # Confidence distribution histogram
 
