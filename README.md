@@ -11,7 +11,7 @@ First clone the repository:
 
 Clone the repository
 ```sh
-git clone https://github.com/lejio/INST447-Final-Project
+git clone git@github.com:lejio/INST447-Final-Project.git
 ```
 
 ```
