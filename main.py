@@ -170,10 +170,7 @@ if __name__ == "__main__":
         print(f"Date: {row['date']}")
 
        
-#  EDA statistics 
-
-
-df = pd.DataFrame(final_dataset)
+#  EDA statistics
 
 print("\n=========================")
 print("DESCRIPTIVE EDA")
@@ -228,3 +225,5 @@ print(df.groupby("source")["sentiment"].value_counts())
 # Bias check 5: potential overconfidence
 high_confidence = df[df["confidence"] > 0.90]
 print("\nHigh confidence articles (>0.90):", len(high_confidence))
+
+df.to_csv("stocks.csv", index=False)

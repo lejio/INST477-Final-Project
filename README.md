@@ -11,11 +11,11 @@ First clone the repository:
 
 Clone the repository
 ```sh
-git clone https://github.com/lejio/INST477-Final-Project
+git clone https://github.com/lejio/INST447-Final-Project
 ```
 
 ```
-cd ./INST477-Final-Project
+cd ./INST447-Final-Project
 ```
 
 Make a environment
